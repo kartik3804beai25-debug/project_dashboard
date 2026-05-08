@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo App - Storage</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .left-pane {
+            width: 40%;
+            background-color: #ffffff;
+            border-right: 2px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .right-pane {
+            width: 60%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #eee;
+        }
+        .task-text { flex-grow: 1; margin-right: 10px; }
+        .completed { text-decoration: line-through; color: #888; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        .icon { cursor: pointer; font-size: 1.1rem; border: none; background: none; }
+        .delete-btn { color: #ff4d4d; }
+        .edit-btn { color: #007bff; }
+        #task-input {
+            width: 100%;
+            max-width: 500px;
+            height: 150px;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="left-pane">
+        <h2>TASK LIST</h2>
+        <p style="font-size: 0.8rem; color: #666;">Tasks are saved automatically to local storage.</p>
+        <div id="task-list"></div>
+    </div>
+
+    <div class="right-pane">
+        <h1>I need to...</h1>
+        <textarea id="task-input" placeholder="Type your task here and press ENTER..."></textarea>
+    </div>
+
+    <script>
+        const taskInput = document.getElementById('task-input');
+        const taskList = document.getElementById('task-list');
+
+        let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
+
+        function saveAndRender() {
+            localStorage.setItem('myTasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                if (text) {
+                    tasks.push({ id: Date.now(), text: text, completed: false });
+                    taskInput.value = '';
+                    saveAndRender();
+                }
+            }
+        });
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'task-item';
+                div.innerHTML = `
+                    <span class="task-text ${task.completed ? 'completed' : ''}">${task.text}</span>
+                    <div class="controls">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                        <button class="icon edit-btn" onclick="editTask(${task.id})">✎</button>
+                        <button class="icon delete-btn" onclick="deleteTask(${task.id})">×</button>
+                    </div>
+                `;
+                taskList.appendChild(div);
+            });
+        }
+
+        window.toggleTask = (id) => {
+            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+            saveAndRender();
+        };
+
+        window.deleteTask = (id) => {
+            tasks = tasks.filter(t => t.id !== id);
+            saveAndRender();
+        };
+
+        window.editTask = (id) => {
+            const task = tasks.find(t => t.id === id);
+            const newName = prompt("Update task name:", task.text);
+            if (newName !== null && newName.trim() !== "") {
+                task.text = newName.trim();
+                saveAndRender();
+            }
+        };
+
+        renderTasks();
+    </script>
+</body>
+</html>
