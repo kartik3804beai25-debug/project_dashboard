@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Discussion Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header><h1>Discussion Portal</h1></header>
+    
+    <main class="container">
+        <section class="left-pane">
+            <div class="actions">
+                <button id="new-question-btn">New Question Form</button>
+                <input type="text" id="search" placeholder="Search questions...">
+            </div>
+            <div id="questions-list"></div>
+        </section>
+
+        <section class="right-pane" id="display-area">
+            <div id="question-form-container">
+                <h2>Welcome to Discussion Portal!</h2>
+                <p>Enter a subject and question to get started</p>
+                <form id="question-form">
+                    <input type="text" id="subject" placeholder="Subject" required>
+                    <textarea id="question-text" placeholder="Question" required></textarea>
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
