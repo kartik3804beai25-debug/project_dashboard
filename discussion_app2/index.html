@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discussion Portal - D2</title>
+    <style>
+        /* User Story 1: Layout */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; }
+        header { background: #00796b; color: white; padding: 15px 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .container { display: flex; flex: 1; overflow: hidden; }
+
+        /* Left Pane Styling */
+        .left-pane { width: 35%; border-right: 1px solid #ddd; background: #fff; display: flex; flex-direction: column; }
+        .left-controls { padding: 15px; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; }
+        #questions-list { flex: 1; overflow-y: auto; }
+
+        /* User Story 6: Search Box */
+        #search { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        /* Right Pane Styling */
+        .right-pane { width: 65%; padding: 30px; overflow-y: auto; background: #fff; }
+
+        /* Question Item Styling & User Story 7: Votes */
+        .question-item { padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; position: relative; }
+        .question-item:hover { background: #f9f9f9; }
+        .vote-controls { float: right; display: flex; flex-direction: column; align-items: center; }
+        .vote-btn { background: none; border: 1px solid #ccc; cursor: pointer; padding: 2px 8px; font-size: 12px; border-radius: 3px; }
+        
+        /* Forms & Inputs */
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 100px; }
+        button { padding: 8px 18px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .resolve-btn { background: #d9534f; margin-bottom: 15px; }
+
+        .response-card { background: #f8f9fa; padding: 12px; margin-bottom: 10px; border-left: 4px solid #00796b; }
+        .highlight { background-color: yellow; }
+    </style>
+</head>
+<body>
+
+    <header><h1>Discussion Portal</h1></header>
+
+    <main class="container">
+        <section class="left-pane">
+            <div class="left-controls">
+                <button id="btn-new-form">New Question Form</button>
+                <input type="text" id="search" placeholder="Search questions...">
+            </div>
+            <div id="questions-list"></div>
+        </section>
+
+        <section class="right-pane" id="display-area">
+            <div id="new-question-view">
+                <h2>Welcome to Discussion Portal!</h2>
+                <p>Enter a subject and question to get started</p>
+                <form id="question-form">
+                    <input type="text" id="subject" placeholder="Subject" required>
+                    <textarea id="question-text" placeholder="Question" required></textarea>
+                    <button type="submit" style="float: right;">Submit</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let questions = [];
+        const questionsList = document.getElementById('questions-list');
+        const displayArea = document.getElementById('display-area');
+        const searchInput = document.getElementById('search');
+        const initialViewHTML = displayArea.innerHTML;
+
+        // User Story 2: Submit Question
+        function handleQuestionSubmit(e) {
+            e.preventDefault();
+            const q = {
+                id: Date.now(),
+                title: document.getElementById('subject').value,
+                text: document.getElementById('question-text').value,
+                responses: [],
+                votes: 0
+            };
+            questions.push(q);
+            sortAndRender();
+            e.target.reset();
+        }
+
+        // User Story 7: Vote logic & Sorting
+        function updateVote(id, amount, event) {
+            event.stopPropagation(); // Prevent opening the question
+            const q = questions.find(q => q.id === id);
+            q.votes += amount;
+            sortAndRender();
+        }
+
+        function sortAndRender(filter = "") {
+            // Sort by votes (Story 7)
+            questions.sort((a, b) => b.votes - a.votes);
+            
+            questionsList.innerHTML = '';
+            const filtered = questions.filter(q => 
+                q.title.toLowerCase().includes(filter.toLowerCase()) || 
+                q.text.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            filtered.forEach(q => {
+                const div = document.createElement('div');
+                div.className = 'question-item';
+                div.innerHTML = `
+                    <div class="vote-controls">
+                        <button class="vote-btn" onclick="updateVote(${q.id}, 1, event)">▲</button>
+                        <span>${q.votes}</span>
+                        <button class="vote-btn" onclick="updateVote(${q.id}, -1, event)">▼</button>
+                    </div>
+                    <h3>${q.title}</h3>
+                    <p>${q.text}</p>
+                `;
+                div.onclick = () => showDetail(q);
+                questionsList.appendChild(div);
+            });
+        }
+
+        // User Story 3, 4, 5: Question Details & Responses
+        function showDetail(q) {
+            displayArea.innerHTML = `
+                <button class="resolve-btn" onclick="resolveQuestion(${q.id})">Resolve</button>
+                <h2>Question</h2>
+                <div style="background:#eee; padding:15px; border-radius:5px;">
+                    <h3>${q.title}</h3>
+                    <p>${q.text}</p>
+                </div>
+                <h3>Responses</h3>
+                <div id="response-list">
+                    ${q.responses.map(r => `
+                        <div class="response-card">
+                            <strong>${r.name}</strong>
+                            <p>${r.comment}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                <hr>
+                <h3>Add Response</h3>
+                <form id="response-form">
+                    <input type="text" id="resp-name" placeholder="Enter Name" required>
+                    <textarea id="resp-comment" placeholder="Enter Comment" required></textarea>
+                    <button type="submit">Submit</button>
+                </form>
+            `;
+
+            document.getElementById('response-form').onsubmit = (e) => {
+                e.preventDefault();
+                q.responses.push({
+                    name: document.getElementById('resp-name').value,
+                    comment: document.getElementById('resp-comment').value
+                });
+                showDetail(q);
+            };
+        }
+
+        // User Story 8: Resolve logic
+        function resolveQuestion(id) {
+            questions = questions.filter(q => q.id !== id);
+            sortAndRender();
+            showNewForm();
+        }
+
+        // User Story 6: Search Filter
+        searchInput.oninput = (e) => sortAndRender(e.target.value);
+
+        function showNewForm() {
+            displayArea.innerHTML = initialViewHTML;
+            document.getElementById('question-form').onsubmit = handleQuestionSubmit;
+        }
+
+        document.getElementById('btn-new-form').onclick = showNewForm;
+        document.getElementById('question-form').onsubmit = handleQuestionSubmit;
+    </script>
+</body>
+</html>
