@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Clock</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #2c3e50;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* User Story 1: Container 460px x 220px and centered */
+        .container {
+            height: 460px;
+            width: 220px;
+            background: rgba(255, 255, 255, 0.2); /* User Story 2: Transparency */
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* User Story 3: Upper part display countdown */
+        .upper-part {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        #timer-label { font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; }
+        #time-left { font-size: 3rem; font-weight: bold; }
+
+        /* User Story 4: Bottom part sections */
+        .bottom-part {
+            flex: 1.5;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .arrows {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .arrow-btn {
+            background: none;
+            border: 1px solid white;
+            color: white;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-weight: bold;
+        }
+
+        .arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .action-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .main-btn {
+            background: #e74c3c;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 0.45;
+        }
+
+        #start-btn { background: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="upper-part">
+            <div id="timer-label">Session</div>
+            <div id="time-left">25:00</div>
+        </div>
+
+        <div class="bottom-part">
+            <div class="control-group">
+                <div>Session Time</div>
+                <div class="arrows">
+                    <button class="arrow-btn" onclick="updateTime('session', -1)">-</button>
+                    <span id="session-length">25</span>
+                    <button class="arrow-btn" onclick="updateTime('session', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div>Break Time</div>
+                <div class="arrows">
+                    <button class="arrow-btn" onclick="updateTime('break', -1)">-</button>
+                    <span id="break-length">5</span>
+                    <button class="arrow-btn" onclick="updateTime('break', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="action-btns">
+                <button id="start-btn" class="main-btn" onclick="toggleTimer()">Start</button>
+                <button id="reset-btn" class="main-btn" onclick="resetTimer()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionTime = 25;
+        let breakTime = 5;
+        let timeLeft = 25 * 60;
+        let timerId = null;
+        let isSession = true;
+
+        const timerLabel = document.getElementById('timer-label');
+        const timeLeftDisplay = document.getElementById('time-left');
+        const sessionDisplay = document.getElementById('session-length');
+        const breakDisplay = document.getElementById('break-length');
+        const startBtn = document.getElementById('start-btn');
+        const arrowBtns = document.querySelectorAll('.arrow-btn');
+
+        function updateTime(type, amt) {
+            if (timerId) return; // Prevent change while running
+            if (type === 'session') {
+                sessionTime = Math.max(1, sessionTime + amt);
+                sessionDisplay.innerText = sessionTime;
+                if (isSession) timeLeft = sessionTime * 60;
+            } else {
+                breakTime = Math.max(1, breakTime + amt);
+                breakDisplay.innerText = breakTime;
+                if (!isSession) timeLeft = breakTime * 60;
+            }
+            displayTime();
+        }
+
+        function displayTime() {
+            let mins = Math.floor(timeLeft / 60);
+            let secs = timeLeft % 60;
+            timeLeftDisplay.innerText = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function toggleTimer() {
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+                startBtn.innerText = "Start";
+                toggleControls(false);
+            } else {
+                toggleControls(true);
+                startBtn.innerText = "Pause";
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    displayTime();
+                    if (timeLeft < 0) {
+                        // User Story 5: Switch between Session and Break
+                        isSession = !isSession;
+                        timerLabel.innerText = isSession ? "Session" : "Break";
+                        timeLeft = (isSession ? sessionTime : breakTime) * 60;
+                    }
+                }, 1000);
+            }
+        }
+
+        function toggleControls(disable) {
+            arrowBtns.forEach(btn => btn.disabled = disable);
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            isSession = true;
+            sessionTime = 25;
+            breakTime = 5;
+            timeLeft = 25 * 60;
+            timerLabel.innerText = "Session";
+            sessionDisplay.innerText = "25";
+            breakDisplay.innerText = "5";
+            startBtn.innerText = "Start";
+            toggleControls(false);
+            displayTime();
+        }
+    </script>
+</body>
+</html>
